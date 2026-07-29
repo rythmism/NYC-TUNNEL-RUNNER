@@ -1,0 +1,50 @@
+name: Build and Deploy raylib WASM
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Install raylib (Web/WASM Dependencies)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libxkbcommon-dev
+          git clone --depth 1 https://github.com/raysan5/raylib.git
+          cd raylib/src
+          make PLATFORM=PLATFORM_WEB -j$(nproc)
+          sudo make install PLATFORM=PLATFORM_WEB
+
+      - name: Build Game for Web
+        run: |
+          emcc main.c -o index.html -DPLATFORM_WEB \
+            -lraylib \
+            -s USE_GLFW=3 \
+            -s ASYNCIFY \
+            -s INITIAL_MEMORY=67108864 \
+            --shell-file $EMSDK/upstream/emscripten/src/shell_minimal.html \
+            -O2
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
