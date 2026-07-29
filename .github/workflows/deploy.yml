@@ -19,19 +19,16 @@ jobs:
       - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Install raylib (Web/WASM Dependencies)
+      - name: Clone and Build raylib
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libxkbcommon-dev
           git clone --depth 1 https://github.com/raysan5/raylib.git
           cd raylib/src
           make PLATFORM=PLATFORM_WEB -j$(nproc)
-          sudo make install PLATFORM=PLATFORM_WEB
 
       - name: Build Game for Web
         run: |
           emcc main.c -o index.html -DPLATFORM_WEB \
-            -lraylib \
+            -I./raylib/src -L./raylib/src -lraylib \
             -s USE_GLFW=3 \
             -s ASYNCIFY \
             -s INITIAL_MEMORY=67108864 \
@@ -39,7 +36,7 @@ jobs:
             -O2
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
