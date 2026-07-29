@@ -23,7 +23,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/raysan5/raylib.git
           cd raylib/src
-          make PLATFORM=PLATFORM_WEB -j$(nproc)
+          emmake make PLATFORM=PLATFORM_WEB -j$(nproc)
 
       - name: Build Game for Web
         run: |
